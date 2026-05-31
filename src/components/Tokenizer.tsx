@@ -8,7 +8,26 @@ import {
   type OpenAIModel,
 } from "../data/tokenizers";
 import { useDebounce } from "../hooks/useDebounce";
-import "./Tokenizer.css";
+import {
+  Box,
+  Paper,
+  Typography,
+  TextField,
+  Select,
+  MenuItem,
+  ListSubheader,
+  FormControl,
+  InputLabel,
+  LinearProgress,
+  Stack,
+  Chip,
+  Alert,
+  IconButton,
+  Divider,
+} from "@mui/material";
+import UploadFileIcon from "@mui/icons-material/UploadFile";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import CloseIcon from "@mui/icons-material/Close";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -42,7 +61,6 @@ function tokenize(text: string, value: SelectValue): Stats {
   const wordCount = text.trim() === "" ? 0 : text.trim().split(/\s+/).length;
   const lineCount = text === "" ? 0 : text.split("\n").length;
 
-  // Determine the actual encoding name used
   const resolvedEncoding: EncodingName = isEncoding(value)
     ? value
     : (ENCODINGS.find((e) =>
@@ -64,15 +82,10 @@ function tokenize(text: string, value: SelectValue): Stats {
 }
 
 // ─── Curated select groups ────────────────────────────────────────────────────
-//
-// Encoding groups run newest → oldest.
-// Within each group, flagship / most-used models come first; dated snapshots
-// and niche variants are pushed to the end.
 
 interface SelectGroup {
   encoding: EncodingName;
   label: string;
-  /** Models shown first, in this exact order. The rest follow alphabetically. */
   priority: string[];
 }
 
@@ -81,75 +94,34 @@ const SELECT_GROUPS: SelectGroup[] = [
     encoding: "o200k_base",
     label: "Latest  ·  o200k_base",
     priority: [
-      // GPT-4o
-      "gpt-4o",
-      "gpt-4o-mini",
-      // Reasoning
-      "o4-mini",
-      "o3",
-      "o3-mini",
-      "o1-pro",
-      "o1",
-      "o1-mini",
-      "o1-preview",
-      // GPT-4.1 family
-      "gpt-4.1",
-      "gpt-4.1-mini",
-      "gpt-4.1-nano",
-      // GPT-5 family
-      "gpt-5",
-      "gpt-5-mini",
-      "gpt-5-nano",
-      // Misc current
-      "chatgpt-4o-latest",
-      "gpt-4.5-preview",
+      "gpt-4o", "gpt-4o-mini", "o4-mini", "o3", "o3-mini", "o1-pro", "o1",
+      "o1-mini", "o1-preview", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano",
+      "gpt-5", "gpt-5-mini", "gpt-5-nano", "chatgpt-4o-latest", "gpt-4.5-preview",
     ],
   },
   {
     encoding: "cl100k_base",
     label: "GPT-4 / Embeddings  ·  cl100k_base",
     priority: [
-      "gpt-4-turbo",
-      "gpt-4",
-      "gpt-4-32k",
-      "gpt-3.5-turbo",
-      "gpt-3.5-turbo-instruct",
-      "text-embedding-3-large",
-      "text-embedding-3-small",
-      "text-embedding-ada-002",
+      "gpt-4-turbo", "gpt-4", "gpt-4-32k", "gpt-3.5-turbo",
+      "gpt-3.5-turbo-instruct", "text-embedding-3-large",
+      "text-embedding-3-small", "text-embedding-ada-002",
     ],
   },
   {
     encoding: "p50k_base",
     label: "Codex / Davinci  ·  p50k_base",
-    priority: [
-      "text-davinci-003",
-      "text-davinci-002",
-      "code-davinci-002",
-      "code-cushman-002",
-    ],
+    priority: ["text-davinci-003", "text-davinci-002", "code-davinci-002", "code-cushman-002"],
   },
   {
     encoding: "p50k_edit",
     label: "Edit models  ·  p50k_edit",
-    priority: [
-      "text-davinci-edit-001",
-      "code-davinci-edit-001",
-    ],
+    priority: ["text-davinci-edit-001", "code-davinci-edit-001"],
   },
   {
     encoding: "r50k_base",
     label: "GPT-3  ·  r50k_base",
-    priority: [
-      "davinci",
-      "curie",
-      "babbage",
-      "ada",
-      "text-davinci-001",
-      "text-curie-001",
-      "text-babbage-001",
-      "text-ada-001",
-    ],
+    priority: ["davinci", "curie", "babbage", "ada", "text-davinci-001", "text-curie-001", "text-babbage-001", "text-ada-001"],
   },
   {
     encoding: "gpt2",
@@ -158,12 +130,9 @@ const SELECT_GROUPS: SelectGroup[] = [
   },
 ];
 
-/** Sorts a model list: priority items first (in order), rest alphabetically. */
 function sortModels(models: readonly string[], priority: string[]): string[] {
   const prioritySet = new Set(priority);
-  const rest = [...models]
-    .filter((m) => !prioritySet.has(m))
-    .sort((a, b) => a.localeCompare(b));
+  const rest = [...models].filter((m) => !prioritySet.has(m)).sort((a, b) => a.localeCompare(b));
   const head = priority.filter((m) => (models as string[]).includes(m));
   return [...head, ...rest];
 }
@@ -171,7 +140,82 @@ function sortModels(models: readonly string[], priority: string[]): string[] {
 const ACCEPTED_EXTENSIONS =
   ".txt,.md,.mdx,.markdown,.json,.jsonl,.csv,.tsv,.yaml,.yml,.toml,.xml,.html,.htm,.js,.ts,.jsx,.tsx,.py,.rb,.go,.rs,.java,.c,.cpp,.h,.cs,.sh,.bash,.zsh,.env,.log";
 
-const DEFAULT_VALUE: SelectValue = "gpt-4o";
+const DEFAULT_VALUE: SelectValue = "gpt-5";
+
+// ─── Stat Card ────────────────────────────────────────────────────────────────
+
+interface StatItemProps {
+  label: string;
+  value: string;
+  highlight?: boolean;
+}
+
+const StatItem = ({ label, value, highlight }: StatItemProps) => (
+  <Paper
+    variant="outlined"
+    sx={{
+      p: 2,
+      textAlign: "center",
+      borderColor: highlight ? "primary.main" : "divider",
+      bgcolor: highlight ? "primary.main" : "background.paper",
+      flex: "1 1 120px",
+      minWidth: 100,
+    }}
+  >
+    <Typography
+      variant="h5"
+      sx={{ fontWeight: 700, color: highlight ? "primary.contrastText" : "text.primary" }}
+    >
+      {value}
+    </Typography>
+    <Typography
+      variant="caption"
+      sx={{ color: highlight ? "primary.contrastText" : "text.secondary", opacity: highlight ? 0.85 : 1 }}
+    >
+      {label}
+    </Typography>
+  </Paper>
+);
+
+// ─── Context Bar ──────────────────────────────────────────────────────────────
+
+interface ContextBarProps {
+  used: number;
+  total: number;
+}
+
+const ContextBar = ({ used, total }: ContextBarProps) => {
+  const pct = Math.min((used / total) * 100, 100);
+  const danger = pct >= 90;
+  const warn = pct >= 70;
+  const color = danger ? "error" : warn ? "warning" : "primary";
+  const label = `${used.toLocaleString()} / ${total.toLocaleString()} tokens (${pct.toFixed(1)}%)`;
+
+  return (
+    <Box>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 0.5 }}>
+        <Typography variant="body2" color="text.secondary">
+          Context window
+        </Typography>
+        <Typography
+          variant="body2"
+          sx={{ fontWeight: 600, color: danger ? "error.main" : warn ? "warning.main" : "text.primary" }}
+        >
+          {label}
+        </Typography>
+      </Box>
+      <LinearProgress
+        variant="determinate"
+        value={pct}
+        color={color}
+        sx={{ height: 8, borderRadius: 4 }}
+        aria-label={label}
+      />
+    </Box>
+  );
+};
+
+// ─── Main Component ───────────────────────────────────────────────────────────
 
 const Tokenizer = () => {
   const [prompt, setPrompt] = useState("");
@@ -205,7 +249,6 @@ const Tokenizer = () => {
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) loadFile(file);
-      // reset so the same file can be re-selected
       e.target.value = "";
     },
     [loadFile]
@@ -244,167 +287,147 @@ const Tokenizer = () => {
   }, [debouncedPrompt, selected]);
 
   return (
-    <div className="tokenizer">
+    <Stack spacing={3} sx={{ width: "100%" }}>
       {/* ── File drop zone ── */}
-      <div className="tk-field">
-        <span className="tk-label">File</span>
-        <div
-          className={`tk-dropzone${isDragging ? " tk-dropzone--active" : ""}`}
+      <Box>
+        <Typography variant="body2" color="text.secondary" sx={{ mb: 0.75, fontWeight: 500 }}>
+          File
+        </Typography>
+        <Paper
+          variant="outlined"
+          onClick={() => fileInputRef.current?.click()}
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
-          onClick={() => fileInputRef.current?.click()}
           role="button"
           tabIndex={0}
           aria-label="Upload a file"
           onKeyDown={(e) => e.key === "Enter" && fileInputRef.current?.click()}
+          sx={{
+            p: 3,
+            textAlign: "center",
+            cursor: "pointer",
+            borderStyle: "dashed",
+            borderColor: isDragging ? "primary.main" : "divider",
+            bgcolor: isDragging ? "action.hover" : "background.paper",
+            transition: "border-color 0.2s, background-color 0.2s",
+            "&:hover": { borderColor: "primary.main", bgcolor: "action.hover" },
+          }}
         >
           <input
             ref={fileInputRef}
             type="file"
             accept={ACCEPTED_EXTENSIONS}
-            className="tk-file-input"
+            style={{ display: "none" }}
             onChange={handleFileInput}
             tabIndex={-1}
           />
           {fileName ? (
-            <div className="tk-file-loaded">
-              <span className="tk-file-icon">📄</span>
-              <span className="tk-file-name">{fileName}</span>
-              <button
-                type="button"
-                className="tk-file-clear"
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 1 }}>
+              <InsertDriveFileIcon color="primary" />
+              <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                {fileName}
+              </Typography>
+              <IconButton
+                size="small"
                 onClick={(e) => { e.stopPropagation(); clearFile(); }}
                 aria-label="Remove file"
               >
-                ✕
-              </button>
-            </div>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
           ) : (
-            <div className="tk-dropzone-hint">
-              <span className="tk-upload-icon">↑</span>
-              <span>Drop a file here or <strong>click to browse</strong></span>
-              <span className="tk-file-types">txt · md · json · py · ts · and more</span>
-            </div>
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 1 }}>
+              <UploadFileIcon sx={{ fontSize: 36, color: "text.secondary" }} />
+              <Typography variant="body2" color="text.secondary">
+                Drop a file here or <strong>click to browse</strong>
+              </Typography>
+              <Typography variant="caption" color="text.disabled">
+                txt · md · json · py · ts · and more
+              </Typography>
+            </Box>
           )}
-        </div>
-        {fileError && <span className="tk-file-error">{fileError}</span>}
-      </div>
+        </Paper>
+        {fileError && (
+          <Alert severity="error" sx={{ mt: 1 }}>
+            {fileError}
+          </Alert>
+        )}
+      </Box>
 
       {/* ── Prompt textarea ── */}
-      <div className="tk-field">
-        <label htmlFor="tk-prompt" className="tk-label">
-          Prompt
-        </label>
-        <textarea
+      <Box>
+        <TextField
           id="tk-prompt"
-          className="tk-textarea"
+          label="Prompt"
+          multiline
           rows={7}
+          fullWidth
           placeholder="…or paste / type your prompt here"
           value={prompt}
           onChange={(e) => { setPrompt(e.target.value); setFileName(null); }}
-          spellCheck={false}
+          slotProps={{ htmlInput: { spellCheck: false } }}
+          helperText={`${prompt.length.toLocaleString()} chars`}
         />
-        <span className="tk-char-hint">{prompt.length.toLocaleString()} chars</span>
-      </div>
+      </Box>
 
       {/* ── Model / encoding select ── */}
-      <div className="tk-field">
-        <label htmlFor="tk-model" className="tk-label">
-          Model / Encoding
-        </label>
-        <select
+      <FormControl fullWidth>
+        <InputLabel id="tk-model-label">Model / Encoding</InputLabel>
+        <Select
+          labelId="tk-model-label"
           id="tk-model"
-          className="tk-select"
           value={selected}
+          label="Model / Encoding"
           onChange={(e) => setSelected(e.target.value as SelectValue)}
+          MenuProps={{ slotProps: { paper: { sx: { maxHeight: 360 } } } }}
         >
-          {SELECT_GROUPS.map(({ encoding, label, priority }) => (
-            <optgroup key={encoding} label={label}>
-              <option value={encoding}>{encoding} (raw encoding)</option>
-              {sortModels(MODELS_BY_ENCODING[encoding], priority).map((model) => (
-                <option key={model} value={model}>
-                  {model}
-                </option>
-              ))}
-            </optgroup>
-          ))}
-        </select>
-      </div>
+          {SELECT_GROUPS.map(({ encoding, label, priority }) => [
+            <ListSubheader key={`header-${encoding}`}>{label}</ListSubheader>,
+            <MenuItem key={encoding} value={encoding}>
+              <em>{encoding} (raw encoding)</em>
+            </MenuItem>,
+            ...sortModels(MODELS_BY_ENCODING[encoding], priority).map((model) => (
+              <MenuItem key={model} value={model}>
+                {model}
+              </MenuItem>
+            )),
+          ])}
+        </Select>
+      </FormControl>
 
       {/* ── Stats output ── */}
-      <div className="tk-stats" aria-live="polite">
+      <Box aria-live="polite">
         {stats === null ? (
-          <p className="tk-empty">Enter a prompt to see token stats.</p>
+          <Typography variant="body2" color="text.disabled" sx={{ textAlign: "center", py: 2 }}>
+            Enter a prompt to see token stats.
+          </Typography>
         ) : (
-          <dl className="tk-dl">
-            <StatItem label="Tokens"         value={stats.tokenCount.toLocaleString()} highlight />
-            <StatItem label="Characters"     value={stats.charCount.toLocaleString()} />
-            <StatItem label="Words"          value={stats.wordCount.toLocaleString()} />
-            <StatItem label="Lines"          value={stats.lineCount.toLocaleString()} />
-            <StatItem label="Tokens / word"  value={stats.avgTokensPerWord.toString()} />
-            <StatItem label="Chars / token"  value={stats.avgCharsPerToken.toString()} />
-            <StatItem label="Encoding"       value={stats.encoding} />
-          </dl>
+          <Stack spacing={2}>
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1.5 }}>
+              <StatItem label="Tokens"        value={stats.tokenCount.toLocaleString()} highlight />
+              <StatItem label="Characters"    value={stats.charCount.toLocaleString()} />
+              <StatItem label="Words"         value={stats.wordCount.toLocaleString()} />
+              <StatItem label="Lines"         value={stats.lineCount.toLocaleString()} />
+              <StatItem label="Tokens / word" value={stats.avgTokensPerWord.toString()} />
+              <StatItem label="Chars / token" value={stats.avgCharsPerToken.toString()} />
+            </Box>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="body2" color="text.secondary">Encoding:</Typography>
+              <Chip label={stats.encoding} size="small" variant="outlined" />
+            </Box>
+          </Stack>
         )}
-      </div>
+      </Box>
 
       {/* ── Context window ── */}
       {stats !== null && stats.contextWindow !== null && (
-        <ContextBar used={stats.tokenCount} total={stats.contextWindow} />
+        <>
+          <Divider />
+          <ContextBar used={stats.tokenCount} total={stats.contextWindow} />
+        </>
       )}
-    </div>
-  );
-};
-
-// ─── Sub-component ────────────────────────────────────────────────────────────
-
-interface StatItemProps {
-  label: string;
-  value: string;
-  highlight?: boolean;
-}
-
-const StatItem = ({ label, value, highlight }: StatItemProps) => (
-  <div className={`tk-stat${highlight ? " tk-stat--highlight" : ""}`}>
-    <dt className="tk-stat-label">{label}</dt>
-    <dd className="tk-stat-value">{value}</dd>
-  </div>
-);
-
-// ─── Context bar ──────────────────────────────────────────────────────────────
-
-interface ContextBarProps {
-  used: number;
-  total: number;
-}
-
-const ContextBar = ({ used, total }: ContextBarProps) => {
-  const pct = Math.min((used / total) * 100, 100);
-  const danger = pct >= 90;
-  const warn  = pct >= 70;
-  const label = `${used.toLocaleString()} / ${total.toLocaleString()} tokens (${pct.toFixed(1)}%)`;
-
-  return (
-    <div className="tk-ctx">
-      <div className="tk-ctx-header">
-        <span className="tk-ctx-label">Context window</span>
-        <span className={`tk-ctx-pct${danger ? " tk-ctx-pct--danger" : warn ? " tk-ctx-pct--warn" : ""}`}>
-          {label}
-        </span>
-      </div>
-      <div className="tk-ctx-track">
-        <div
-          className={`tk-ctx-fill${danger ? " tk-ctx-fill--danger" : warn ? " tk-ctx-fill--warn" : ""}`}
-          style={{ width: `${pct}%` }}
-          role="progressbar"
-          aria-valuenow={used}
-          aria-valuemin={0}
-          aria-valuemax={total}
-          aria-label={label}
-        />
-      </div>
-    </div>
+    </Stack>
   );
 };
 
