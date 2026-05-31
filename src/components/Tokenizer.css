@@ -1,0 +1,276 @@
+.tokenizer {
+  width: 100%;
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+/* ── Field wrapper ─────────────────────────────────────────────────────────── */
+
+.tk-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+}
+
+.tk-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+/* ── Drop zone ─────────────────────────────────────────────────────────────── */
+
+.tk-file-input {
+  display: none;
+}
+
+.tk-dropzone {
+  border: 1.5px dashed var(--border);
+  border-radius: 8px;
+  background: var(--code-bg);
+  padding: 20px 16px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover,
+  &:focus-visible {
+    border-color: var(--accent-border);
+    background: var(--accent-bg);
+    outline: none;
+  }
+
+  &.tk-dropzone--active {
+    border-color: var(--accent);
+    background: var(--accent-bg);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+}
+
+.tk-dropzone-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  color: var(--text);
+  font-size: 14px;
+  pointer-events: none;
+}
+
+.tk-upload-icon {
+  font-size: 22px;
+  line-height: 1;
+  margin-bottom: 2px;
+  color: var(--accent);
+}
+
+.tk-file-types {
+  font-size: 12px;
+  opacity: 0.6;
+}
+
+.tk-file-loaded {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 0 4px;
+}
+
+.tk-file-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.tk-file-name {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-h);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+}
+
+.tk-file-clear {
+  flex-shrink: 0;
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 50%;
+  width: 22px;
+  height: 22px;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+  padding: 0;
+  line-height: 1;
+
+  &:hover {
+    border-color: #e55;
+    color: #e55;
+  }
+}
+
+.tk-file-error {
+  font-size: 13px;
+  color: #e55;
+  margin-top: 2px;
+}
+
+/* ── Textarea ──────────────────────────────────────────────────────────────── */
+
+.tk-textarea {
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.6;
+  padding: 12px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background: var(--code-bg);
+  color: var(--text-h);
+  resize: vertical;
+  transition: border-color 0.2s;
+  outline: none;
+  width: 100%;
+  box-sizing: border-box;
+
+  &:focus {
+    border-color: var(--accent-border);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+
+  &::placeholder {
+    color: var(--text);
+    opacity: 0.6;
+  }
+}
+
+.tk-char-hint {
+  font-size: 12px;
+  color: var(--text);
+  align-self: flex-end;
+  margin-top: -2px;
+}
+
+/* ── Select ────────────────────────────────────────────────────────────────── */
+
+.tk-select {
+  appearance: none;
+  -webkit-appearance: none;
+  font-family: var(--mono);
+  font-size: 14px;
+  padding: 10px 36px 10px 14px;
+  border-radius: 8px;
+  border: 1.5px solid var(--border);
+  background-color: var(--code-bg);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236b6375' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  color: var(--text-h);
+  cursor: pointer;
+  width: 100%;
+  transition: border-color 0.2s;
+  outline: none;
+
+  &:focus {
+    border-color: var(--accent-border);
+    box-shadow: 0 0 0 3px var(--accent-bg);
+  }
+
+  optgroup {
+    font-weight: 700;
+    color: var(--accent);
+  }
+
+  option {
+    font-weight: 400;
+    color: var(--text-h);
+    background: var(--bg);
+  }
+}
+
+/* ── Stats panel ───────────────────────────────────────────────────────────── */
+
+.tk-stats {
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--code-bg);
+  padding: 20px;
+  min-height: 100px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tk-empty {
+  font-size: 14px;
+  color: var(--text);
+  opacity: 0.7;
+  margin: 0;
+}
+
+.tk-dl {
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px 12px;
+  width: 100%;
+
+  @media (max-width: 600px) {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.tk-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 12px 14px;
+  border-radius: 8px;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  text-align: center;
+  transition: border-color 0.2s;
+
+  &.tk-stat--highlight {
+    border-color: var(--accent-border);
+    background: var(--accent-bg);
+
+    .tk-stat-value {
+      color: var(--accent);
+      font-size: 28px;
+    }
+  }
+}
+
+.tk-stat-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.tk-stat-value {
+  font-family: var(--mono);
+  font-size: 20px;
+  font-weight: 600;
+  color: var(--text-h);
+  line-height: 1.2;
+  word-break: break-all;
+}
+
