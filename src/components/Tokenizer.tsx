@@ -3,6 +3,7 @@ import { getEncoding, encodingForModel } from "js-tiktoken";
 import {
   ENCODINGS,
   MODELS_BY_ENCODING,
+  MODEL_CONTEXT_WINDOWS,
   type EncodingName,
   type OpenAIModel,
 } from "../data/tokenizers";
@@ -19,7 +20,9 @@ interface Stats {
   wordCount: number;
   lineCount: number;
   avgCharsPerToken: number;
+  avgTokensPerWord: number;
   encoding: EncodingName;
+  contextWindow: number | null;
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -46,13 +49,17 @@ function tokenize(text: string, value: SelectValue): Stats {
         (MODELS_BY_ENCODING[e] as readonly string[]).includes(value)
       ) ?? "cl100k_base");
 
+  const contextWindow = MODEL_CONTEXT_WINDOWS[value] ?? null;
+
   return {
     tokenCount,
     charCount,
     wordCount,
     lineCount,
     avgCharsPerToken: tokenCount === 0 ? 0 : parseFloat((charCount / tokenCount).toFixed(2)),
+    avgTokensPerWord: wordCount === 0 ? 0 : parseFloat((tokenCount / wordCount).toFixed(2)),
     encoding: resolvedEncoding,
+    contextWindow,
   };
 }
 
@@ -331,34 +338,21 @@ const Tokenizer = () => {
           <p className="tk-empty">Enter a prompt to see token stats.</p>
         ) : (
           <dl className="tk-dl">
-            <StatItem
-              label="Tokens"
-              value={stats.tokenCount.toLocaleString()}
-              highlight
-            />
-            <StatItem
-              label="Characters"
-              value={stats.charCount.toLocaleString()}
-            />
-            <StatItem
-              label="Words"
-              value={stats.wordCount.toLocaleString()}
-            />
-            <StatItem
-              label="Lines"
-              value={stats.lineCount.toLocaleString()}
-            />
-            <StatItem
-              label="Chars / token"
-              value={stats.avgCharsPerToken.toString()}
-            />
-            <StatItem
-              label="Encoding"
-              value={stats.encoding}
-            />
+            <StatItem label="Tokens"         value={stats.tokenCount.toLocaleString()} highlight />
+            <StatItem label="Characters"     value={stats.charCount.toLocaleString()} />
+            <StatItem label="Words"          value={stats.wordCount.toLocaleString()} />
+            <StatItem label="Lines"          value={stats.lineCount.toLocaleString()} />
+            <StatItem label="Tokens / word"  value={stats.avgTokensPerWord.toString()} />
+            <StatItem label="Chars / token"  value={stats.avgCharsPerToken.toString()} />
+            <StatItem label="Encoding"       value={stats.encoding} />
           </dl>
         )}
       </div>
+
+      {/* ── Context window ── */}
+      {stats !== null && stats.contextWindow !== null && (
+        <ContextBar used={stats.tokenCount} total={stats.contextWindow} />
+      )}
     </div>
   );
 };
@@ -377,5 +371,41 @@ const StatItem = ({ label, value, highlight }: StatItemProps) => (
     <dd className="tk-stat-value">{value}</dd>
   </div>
 );
+
+// ─── Context bar ──────────────────────────────────────────────────────────────
+
+interface ContextBarProps {
+  used: number;
+  total: number;
+}
+
+const ContextBar = ({ used, total }: ContextBarProps) => {
+  const pct = Math.min((used / total) * 100, 100);
+  const danger = pct >= 90;
+  const warn  = pct >= 70;
+  const label = `${used.toLocaleString()} / ${total.toLocaleString()} tokens (${pct.toFixed(1)}%)`;
+
+  return (
+    <div className="tk-ctx">
+      <div className="tk-ctx-header">
+        <span className="tk-ctx-label">Context window</span>
+        <span className={`tk-ctx-pct${danger ? " tk-ctx-pct--danger" : warn ? " tk-ctx-pct--warn" : ""}`}>
+          {label}
+        </span>
+      </div>
+      <div className="tk-ctx-track">
+        <div
+          className={`tk-ctx-fill${danger ? " tk-ctx-fill--danger" : warn ? " tk-ctx-fill--warn" : ""}`}
+          style={{ width: `${pct}%` }}
+          role="progressbar"
+          aria-valuenow={used}
+          aria-valuemin={0}
+          aria-valuemax={total}
+          aria-label={label}
+        />
+      </div>
+    </div>
+  );
+};
 
 export default Tokenizer;

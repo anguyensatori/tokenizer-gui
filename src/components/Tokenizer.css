@@ -226,13 +226,68 @@
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(4, 1fr);
   gap: 16px 12px;
   width: 100%;
 
   @media (max-width: 600px) {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* ── Context window card ───────────────────────────────────────────────────── */
+
+.tk-ctx {
+  border-radius: 10px;
+  border: 1.5px solid var(--border);
+  background: var(--code-bg);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tk-ctx-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tk-ctx-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text);
+}
+
+.tk-ctx-pct {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--text-h);
+
+  &.tk-ctx-pct--warn   { color: #d97706; }
+  &.tk-ctx-pct--danger { color: #dc2626; }
+}
+
+.tk-ctx-track {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: var(--border);
+  overflow: hidden;
+}
+
+.tk-ctx-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--accent);
+  transition: width 0.3s ease;
+
+  &.tk-ctx-fill--warn   { background: #d97706; }
+  &.tk-ctx-fill--danger { background: #dc2626; }
 }
 
 .tk-stat {
